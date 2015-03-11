@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.location.Location;
 import android.location.LocationListener;
@@ -13,6 +14,9 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.EditText;
+import android.widget.TextView;
+
+import java.util.List;
 
 
 public class MainActivity extends ActionBarActivity {
@@ -23,13 +27,22 @@ public class MainActivity extends ActionBarActivity {
     // private static final String locationProvider = LocationManager.GPS_PROVIDER;
 
     // motion sensor
-    private SensorManager mSensorManager;
-    private Sensor mSensor;
+    private SensorManager sensorManager;
+    private List<Sensor> sensorList;
+
+    // Control
+    private TextView textViewAInformation;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        /* List all the sensor, and the information add to the list */
+        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        sensorList = sensorManager.getSensorList(Sensor.TYPE_ALL);
+
+        textViewAInformation = (TextView) findViewById(R.id.textViewAInformation);
     }
 
 
@@ -54,12 +67,81 @@ public class MainActivity extends ActionBarActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    public boolean startMotionListening() {
-        mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+    @Override
+    public void onPause(){
+        super.onPause();
+
+        stopMotionListening(Sensor.TYPE_ACCELEROMETER);
+    }
+
+    @Override
+    public void onResume(){
+        super.onResume();
+
+        startMotionListening(Sensor.TYPE_ACCELEROMETER);
+    }
+
+    public boolean startMotionListening(int type) {
+        Sensor sensorTmp;
+        SensorEventListener listenerTmp = null;
+
+        sensorTmp = sensorManager.getDefaultSensor(type);
+
+        if (sensorTmp != null) {
+            if (type == Sensor.TYPE_ACCELEROMETER) {
+                listenerTmp = accelerationListener;
+            }
+
+            if (listenerTmp != null) {
+                sensorManager.registerListener(listenerTmp, sensorTmp, SensorManager.SENSOR_DELAY_NORMAL);
+            }
+
+            return true;
+        }
+        return false;
+    }
+
+    public boolean stopMotionListening(int type) {
+        Sensor sensorTmp;
+        SensorEventListener listenerTmp = null;
+
+        if (type == Sensor.TYPE_ACCELEROMETER) {
+            listenerTmp = accelerationListener;
+        }
+
+        sensorManager.unregisterListener(listenerTmp);
 
         return true;
     }
+
+    public SensorEventListener accelerationListener = new SensorEventListener() {
+        @Override
+        public final void onAccuracyChanged(Sensor sensor, int accuracy) {
+            // Do something here if sensor accuracy changes.
+        }
+
+        @Override
+        public final void onSensorChanged(SensorEvent event) {
+            // In this example, alpha is calculated as t / (t + dT),
+            // where t is the low-pass filter's time-constant and
+            // dT is the event delivery rate.
+
+            /*
+            final float alpha = 0.8f;
+
+            // Isolate the force of gravity with the low-pass filter.
+            gravity[0] = alpha * gravity[0] + (1 - alpha) * event.values[0];
+            gravity[1] = alpha * gravity[1] + (1 - alpha) * event.values[1];
+            gravity[2] = alpha * gravity[2] + (1 - alpha) * event.values[2];
+
+            // Remove the gravity contribution with the high-pass filter.
+            linear_acceleration[0] = event.values[0] - gravity[0];
+            linear_acceleration[1] = event.values[1] - gravity[1];
+            linear_acceleration[2] = event.values[2] - gravity[2];
+            */
+            textViewAInformation.setText("x:" + event.values[0] + "\r\ny:" + event.values[1] + "\r\nz:" + event.values[2]);
+        }
+    };
 
     public boolean startLocationListening() {
         // Acquire a reference to the system Location Manager
