@@ -1,5 +1,6 @@
 package com.ctrl.music.locationmarker;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.Intent;
 import android.hardware.Sensor;
@@ -9,6 +10,8 @@ import android.hardware.SensorManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.AsyncTask;
+import android.os.Build;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
@@ -32,6 +35,11 @@ public class MainActivity extends ActionBarActivity {
 
     // Control
     private TextView textViewAInformation;
+    private TextView textViewBInformation;
+    private TextView textViewCInformation;
+
+    // Async task
+    private OrienationAsyncTask orienationTask;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,6 +51,8 @@ public class MainActivity extends ActionBarActivity {
         sensorList = sensorManager.getSensorList(Sensor.TYPE_ALL);
 
         textViewAInformation = (TextView) findViewById(R.id.textViewAInformation);
+        textViewBInformation = (TextView) findViewById(R.id.textViewBInformation);
+        textViewCInformation = (TextView) findViewById(R.id.textViewCInformation);
     }
 
 
@@ -68,17 +78,65 @@ public class MainActivity extends ActionBarActivity {
     }
 
     @Override
-    public void onPause(){
+    public void onPause() {
         super.onPause();
 
         stopMotionListening(Sensor.TYPE_ACCELEROMETER);
+        stopMotionListening(Sensor.TYPE_ORIENTATION);
+
+        if (orienationTask != null) {
+            orienationTask.cancel(true);
+        }
     }
 
     @Override
-    public void onResume(){
+    public void onResume() {
         super.onResume();
 
         startMotionListening(Sensor.TYPE_ACCELEROMETER);
+        startMotionListening(Sensor.TYPE_ORIENTATION);
+
+        /* start a new async job to display some information */
+        orienationTask = new OrienationAsyncTask();
+        orienationTask.execute();
+    }
+
+    private class OrienationAsyncTask extends
+            AsyncTask<Integer, Integer, String> {
+
+        public OrienationAsyncTask() {
+        }
+
+        @Override
+        protected String doInBackground(Integer... params) {
+            Sensor sensorTmp;
+            sensorTmp = sensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION);
+
+            while (true) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                if (isCancelled()) {
+                    break;
+                }
+            }
+            return "Executed";
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+        }
+
+        @Override
+        protected void onPreExecute() {
+        }
+
+        @Override
+        protected void onProgressUpdate(Integer... values) {
+        }
     }
 
     public boolean startMotionListening(int type) {
@@ -90,6 +148,8 @@ public class MainActivity extends ActionBarActivity {
         if (sensorTmp != null) {
             if (type == Sensor.TYPE_ACCELEROMETER) {
                 listenerTmp = accelerationListener;
+            } else if (type == Sensor.TYPE_ORIENTATION) {
+                listenerTmp = orienationListener;
             }
 
             if (listenerTmp != null) {
@@ -107,6 +167,8 @@ public class MainActivity extends ActionBarActivity {
 
         if (type == Sensor.TYPE_ACCELEROMETER) {
             listenerTmp = accelerationListener;
+        } else if (type == Sensor.TYPE_ORIENTATION) {
+            listenerTmp = orienationListener;
         }
 
         sensorManager.unregisterListener(listenerTmp);
@@ -140,6 +202,18 @@ public class MainActivity extends ActionBarActivity {
             linear_acceleration[2] = event.values[2] - gravity[2];
             */
             textViewAInformation.setText("x:" + event.values[0] + "\r\ny:" + event.values[1] + "\r\nz:" + event.values[2]);
+        }
+    };
+
+    public SensorEventListener orienationListener = new SensorEventListener() {
+        @Override
+        public final void onAccuracyChanged(Sensor sensor, int accuracy) {
+            // Do something here if sensor accuracy changes.
+        }
+
+        @Override
+        public final void onSensorChanged(SensorEvent event) {
+            textViewBInformation.setText("x:" + event.values[0] + "\r\ny:" + event.values[1] + "\r\nz:" + event.values[2]);
         }
     };
 
