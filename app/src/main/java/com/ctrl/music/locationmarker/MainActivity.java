@@ -39,7 +39,7 @@ public class MainActivity extends ActionBarActivity {
     private TextView textViewCInformation;
 
     // Async task
-    private OrienationAsyncTask orienationTask;
+    private OrientationAsyncTask orientationTask;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,8 +84,8 @@ public class MainActivity extends ActionBarActivity {
         stopMotionListening(Sensor.TYPE_ACCELEROMETER);
         stopMotionListening(Sensor.TYPE_ORIENTATION);
 
-        if (orienationTask != null) {
-            orienationTask.cancel(true);
+        if (orientationTask != null) {
+            orientationTask.cancel(true);
         }
     }
 
@@ -97,14 +97,14 @@ public class MainActivity extends ActionBarActivity {
         startMotionListening(Sensor.TYPE_ORIENTATION);
 
         /* start a new async job to display some information */
-        orienationTask = new OrienationAsyncTask();
-        orienationTask.execute();
+        orientationTask = new OrientationAsyncTask();
+        orientationTask.execute();
     }
 
-    private class OrienationAsyncTask extends
+    private class OrientationAsyncTask extends
             AsyncTask<Integer, Integer, String> {
 
-        public OrienationAsyncTask() {
+        public OrientationAsyncTask() {
         }
 
         @Override
